@@ -2,13 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
-
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    private const float FAIL_CANVAS_OPEN_DELAY = 2F;
     private bool isGameStarted;
     private bool isGameFnish;
     [SerializeField] private GameObject StartText;
+    [SerializeField] private GameObject FailCanvas;
 
     [Inject] PlayerManager playerManager;
     [Inject] PieceManager pieceManager;
@@ -17,6 +20,11 @@ public class GameManager : MonoBehaviour
     { 
         get => isGameStarted; 
         set => isGameStarted = value; 
+    }
+    public bool IsGameFnish
+    { 
+        get => isGameFnish;
+        set => isGameFnish = value;
     }
 
     private void OnEnable()
@@ -47,8 +55,23 @@ public class GameManager : MonoBehaviour
 
     public void GameFail()
     {
-        EventManager.OnCameraStop?.Invoke();
+       
         EventManager.OnPlayerFall?.Invoke();
-        isGameFnish = true;
+        IsGameFnish = true;
+        StartCoroutine(DelayedFailCanvas(FAIL_CANVAS_OPEN_DELAY));
+    }
+
+    public void GameRestart()
+    {
+        SceneManager.LoadSceneAsync(0, LoadSceneMode.Single);
+    }
+
+    IEnumerator DelayedFailCanvas(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        FailCanvas.SetActive(true);
+        FailCanvas.GetComponentInChildren<Button>().onClick.AddListener(GameRestart);
+        EventManager.OnCameraStop?.Invoke();
+
     }
 }

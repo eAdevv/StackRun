@@ -82,8 +82,10 @@ public class PlayerManager : MonoBehaviour
         playerAnimator.SetBool(Runnig, false);
         playerAnimator.SetTrigger(Fall);
         _playerState = PlayerState.Fail;
-        playerRigidbody.constraints = RigidbodyConstraints.None;
-        
+        playerRigidbody.constraints &= ~RigidbodyConstraints.FreezePositionY;
+        GetComponentInChildren<Collider>().isTrigger = true;
+
+
     }
 
     private void GetLastPiece(GameObject lastPiece)

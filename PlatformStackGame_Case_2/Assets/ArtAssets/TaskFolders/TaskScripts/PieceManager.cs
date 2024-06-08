@@ -51,7 +51,7 @@ public class PieceManager : MonoBehaviour
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Mouse0) && gameManager.IsGameStarted)
+        if(Input.GetKeyDown(KeyCode.Mouse0) && gameManager.IsGameStarted && !gameManager.IsGameFnish)
         {
             CutPiece();
 
@@ -143,7 +143,7 @@ public class PieceManager : MonoBehaviour
             RigidbodyChanges(CuttedPiece);
             Destroy(CurrentPiece);
 
-            DOVirtual.DelayedCall(.25f, () => {
+            DOVirtual.DelayedCall(.35f, () => {
                 EventManager.OnGameFail?.Invoke();
             });
         }
