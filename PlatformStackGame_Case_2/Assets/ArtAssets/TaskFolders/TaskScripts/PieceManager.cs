@@ -17,38 +17,27 @@ public class PieceManager : MonoBehaviour
     [SerializeField] private float pieceSpeed;
 
     private SpawnDirection PieceDirection;
-    private bool canSpawn;
     private bool isPerfectClick;
 
     private GameObject LastPiece;
     private GameObject CurrentPiece;
 
     [Inject] GameManager gameManager;
-    public bool CanSpawn
-    {
-        get => canSpawn;
-        set => canSpawn = value;
-    }
-    public float PieceSpeed
-    {
-        get => pieceSpeed;
-        set => pieceSpeed = value;
-    }
-    public GameObject PiecePrefab
-    { 
-         get => piecePrefab; 
-         set => piecePrefab = value; 
-    }
+
+    public GameObject PiecePrefab { get => piecePrefab; set => piecePrefab = value; }
+    public float PieceSpeed { get => pieceSpeed; set => pieceSpeed = value; }
 
     private void Awake()
     {
         if (gameObject.transform.position.x > 0) PieceDirection = SpawnDirection.Left; // Spawner Saðda ise piece sola gider;
         else PieceDirection = SpawnDirection.Right; // Deðilse saða gider;
 
-        LastPiece = StartPlatform;
-        EventManager.OnGetLastPiece(LastPiece);
-        
+    }
 
+    private void Start()
+    {
+        LastPiece = StartPlatform;
+        EventManager.OnGetLastPiece?.Invoke(LastPiece);
     }
 
     private void OnEnable()
@@ -77,7 +66,7 @@ public class PieceManager : MonoBehaviour
         CurrentPiece = newPiece;
     }
 
-    // Yeni gelecek parça bir önceki parçanýn scali ile ayný yapar
+    // Yeni gelecek parça ile bir önceki parçanýn scalini  ayný yapar
     private GameObject SpawnNewPiece(Vector3 Scale,Vector3 Pos) 
     {
         GameObject newBlock = Instantiate(PiecePrefab, Pos, Quaternion.identity);
@@ -149,11 +138,14 @@ public class PieceManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Fail");
             CuttedPiece.transform.position = mainPos;
             CuttedPiece.transform.localScale = LastPiece.transform.localScale;
             RigidbodyChanges(CuttedPiece);
             Destroy(CurrentPiece);
+
+            DOVirtual.DelayedCall(.25f, () => {
+                EventManager.OnGameFail?.Invoke();
+            });
         }
 
         isPerfectClick = CuttedPiece.transform.localScale.x / CurrentPiece.transform.localScale.x > .85f;

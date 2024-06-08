@@ -12,17 +12,15 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private Transform StartTransform;
     [SerializeField] private Transform CameraTarget;
 
-    [Inject] PlayerManager playerManager;
-    [Inject] GameManager gameManager;
-    [Inject] PieceManager pieceManager;
-
     private void OnEnable()
     {
         EventManager.OnCameraIdleToStart += IdleCamera;
+        EventManager.OnCameraStop += StopGameCamera;
     }
     private void OnDisable()
     {
         EventManager.OnCameraIdleToStart -= IdleCamera;
+        EventManager.OnCameraStop -= StopGameCamera;
     }
     private void IdleCamera()
     {
@@ -32,8 +30,11 @@ public class CameraManager : MonoBehaviour
 
     private void StartGameCamera()
     {
-        gameManager.IsGameStarted = true;
         gameCamera.Follow = CameraTarget;
-        EventManager.OnSpawnPiece(pieceManager.PiecePrefab.transform.localScale ,pieceManager.transform.position); // First Spawn Piece
+        EventManager.OnGameStart?.Invoke();
+    }
+    private void StopGameCamera()
+    {
+        gameCamera.Follow = null;
     }
 }
