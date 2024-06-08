@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using Zenject;
 public enum SpawnDirection
 {
     Left,
@@ -11,7 +12,7 @@ public class PieceManager : MonoBehaviour
 {
     private const float MAX_DIRECTION_DISTANCE_LIMIT = 10;
 
-    [SerializeField] private GameObject PiecePrefab;
+    [SerializeField] private GameObject piecePrefab;
     [SerializeField] private GameObject StartPlatform;
     [SerializeField] private float pieceSpeed;
 
@@ -21,6 +22,8 @@ public class PieceManager : MonoBehaviour
 
     private GameObject LastPiece;
     private GameObject CurrentPiece;
+
+    [Inject] GameManager gameManager;
     public bool CanSpawn
     {
         get => canSpawn;
@@ -31,19 +34,35 @@ public class PieceManager : MonoBehaviour
         get => pieceSpeed;
         set => pieceSpeed = value;
     }
+    public GameObject PiecePrefab
+    { 
+         get => piecePrefab; 
+         set => piecePrefab = value; 
+    }
+
     private void Awake()
     {
         if (gameObject.transform.position.x > 0) PieceDirection = SpawnDirection.Left; // Spawner Saðda ise piece sola gider;
         else PieceDirection = SpawnDirection.Right; // Deðilse saða gider;
 
         LastPiece = StartPlatform;
-        OnSpawnPiece(PiecePrefab.transform.localScale,transform.position); 
-       
+        EventManager.OnGetLastPiece(LastPiece);
+        
+
+    }
+
+    private void OnEnable()
+    {
+        EventManager.OnSpawnPiece += OnSpawnPiece;  
+    }
+    private void OnDisable()
+    {
+        EventManager.OnSpawnPiece -= OnSpawnPiece;
     }
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Mouse0))
+        if(Input.GetKeyDown(KeyCode.Mouse0) && gameManager.IsGameStarted)
         {
             CutPiece();
 
@@ -101,6 +120,9 @@ public class PieceManager : MonoBehaviour
     #endregion
 
     #region Piece Cut
+
+    // Kesile parca 0 dan oluþturulur.
+    // Ana parcanýn scaleinden son platform parçasýnýn x pozisyonu ve ana parçanýn x pozisyon deðeri cýkarýlarak yeni parcanýn scale oraný bulunur.
     private void CutPiece()
     {
         GameObject CuttedPiece = Instantiate(PiecePrefab, CurrentPiece.transform.position,Quaternion.identity);
@@ -123,6 +145,7 @@ public class PieceManager : MonoBehaviour
             OnSetSpawnerPosition();
             OnSpawnPiece(CuttedPiece.transform.localScale, transform.position);
             LastPiece = CuttedPiece;
+            EventManager.OnGetLastPiece?.Invoke(LastPiece);
         }
         else
         {
@@ -152,16 +175,17 @@ public class PieceManager : MonoBehaviour
 
     }
 
+    // Parça pozisyon düzeltmesi
     private float SetPiecePositionOffset(Vector3 blockPos, Vector3 targetPos)
     {
         float offset = 0;
         if (blockPos.x - targetPos.x > 0)
         {
-            offset = 1;
+            offset = 1; // Parça Saðda
         }
         else
         {
-            offset = -1;
+            offset = -1; // Parça SOlda
         }
 
         return offset;
