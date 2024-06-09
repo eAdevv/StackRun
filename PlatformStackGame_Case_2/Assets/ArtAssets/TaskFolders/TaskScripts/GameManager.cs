@@ -9,7 +9,7 @@ public class GameManager : MonoBehaviour
 {
     private const float FAIL_CANVAS_OPEN_DELAY = 2F;
     private bool isGameStarted;
-    private bool isGameFnish;
+    [SerializeField]private bool isGameFnish;
     [SerializeField] private GameObject StartText;
     [SerializeField] private GameObject FailCanvas;
 
@@ -55,7 +55,6 @@ public class GameManager : MonoBehaviour
 
     public void GameFail()
     {
-       
         EventManager.OnPlayerFall?.Invoke();
         IsGameFnish = true;
         StartCoroutine(DelayedFailCanvas(FAIL_CANVAS_OPEN_DELAY));

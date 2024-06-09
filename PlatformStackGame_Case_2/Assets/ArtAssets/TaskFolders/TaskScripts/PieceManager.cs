@@ -10,22 +10,30 @@ public enum SpawnDirection
 }
 public class PieceManager : MonoBehaviour
 {
+    [Inject] GameManager gameManager;
+
     private const float MAX_DIRECTION_DISTANCE_LIMIT = 10;
+    private const float CLICK_TOLERANCE = .9f;
 
     [SerializeField] private GameObject piecePrefab;
     [SerializeField] private GameObject StartPlatform;
+    [SerializeField] private AudioClip clickAudio;
+    [SerializeField] private Material[] myColors;
     [SerializeField] private float pieceSpeed;
 
+    private int perfectClickCount;
+
     private SpawnDirection PieceDirection;
-    private bool isPerfectClick;
 
     private GameObject LastPiece;
     private GameObject CurrentPiece;
+    private AudioSource audioSource;
 
-    [Inject] GameManager gameManager;
+    private bool isPiecePlaced;
 
     public GameObject PiecePrefab { get => piecePrefab; set => piecePrefab = value; }
     public float PieceSpeed { get => pieceSpeed; set => pieceSpeed = value; }
+    public bool IsPiecePlaced { get => isPiecePlaced; set => isPiecePlaced = value; }
 
     private void Awake()
     {
@@ -38,6 +46,7 @@ public class PieceManager : MonoBehaviour
     {
         LastPiece = StartPlatform;
         EventManager.OnGetLastPiece?.Invoke(LastPiece);
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void OnEnable()
@@ -54,16 +63,20 @@ public class PieceManager : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.Mouse0) && gameManager.IsGameStarted && !gameManager.IsGameFnish)
         {
             CutPiece();
-
         }
     }
 
     #region Piece Spawn
     private void OnSpawnPiece(Vector3 LocalScale , Vector3 Position)
     {
-        var newPiece = SpawnNewPiece(LocalScale, Position);
-        PieceMovement(newPiece);
-        CurrentPiece = newPiece;
+        if (!gameManager.IsGameFnish)
+        {
+            var newPiece = SpawnNewPiece(LocalScale, Position);
+            newPiece.GetComponent<MeshRenderer>().material = myColors[Random.Range(0, myColors.Length - 1)];
+            PieceMovement(newPiece);
+            CurrentPiece = newPiece;
+            IsPiecePlaced = false;
+        }
     }
 
     // Yeni gelecek parça ile bir önceki parçanýn scalini  ayný yapar
@@ -127,10 +140,28 @@ public class PieceManager : MonoBehaviour
         SetCurrentBlock(mainPos, targetPos, mainScale, CuttedPiece, offset);
         RigidbodyChanges(CurrentPiece);
         DOTween.Kill(CurrentPiece.transform);
+        // Perfect Click 
+        var isPerfectClick = CuttedPiece.transform.localScale.x / CurrentPiece.transform.localScale.x > CLICK_TOLERANCE;
 
-        bool failTolerance = CuttedPiece.transform.localScale.x > .05f;
-        if (failTolerance)
+        if (isPerfectClick)
         {
+            Debug.Log("Perfect");
+            perfectClickCount++;
+            audioSource.pitch = 0.5f + (perfectClickCount * .1f);
+        }
+        else
+        {
+            Debug.Log("UnPerfect");
+            perfectClickCount = 0;
+            audioSource.pitch = 0.5f;
+        }
+
+        audioSource.PlayOneShot(clickAudio);
+
+        // Fail check
+        if (CuttedPiece.transform.localScale.x > .05f)
+        {
+            IsPiecePlaced = true;
             OnSetSpawnerPosition();
             OnSpawnPiece(CuttedPiece.transform.localScale, transform.position);
             LastPiece = CuttedPiece;
@@ -148,16 +179,13 @@ public class PieceManager : MonoBehaviour
             });
         }
 
-        isPerfectClick = CuttedPiece.transform.localScale.x / CurrentPiece.transform.localScale.x > .85f;
-
-       
        
     }
+   
     private void SetCurrentBlock(Vector3 MainPos, Vector3 TargetPos, Vector3 MainScale, GameObject cutBlock, float offset)
     {
         CurrentPiece.transform.position = new Vector3((TargetPos.x + MainPos.x) / 2f + MainScale.x * offset / 2f, MainPos.y, MainPos.z);
         CurrentPiece.transform.localScale = new Vector3((LastPiece.transform.localScale.x - cutBlock.transform.localScale.x), LastPiece.transform.localScale.y, LastPiece.transform.localScale.z);
-
     }
 
     private void RigidbodyChanges(GameObject cuttedPiece)

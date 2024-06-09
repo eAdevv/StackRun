@@ -16,10 +16,11 @@ public class PlayerManager : MonoBehaviour
     private const float TIME_MULTIPLIER = 3;
 
     [SerializeField] private float _playerSpeed;
+    [SerializeField] private Transform finalPoint;
+    [SerializeField] private GameObject _lastPiece;
 
     private Animator playerAnimator;
     private Rigidbody playerRigidbody;
-    private GameObject _lastPiece;
     private PlayerState _playerState;
 
     private static readonly int Runnig = Animator.StringToHash("Run");
@@ -28,6 +29,8 @@ public class PlayerManager : MonoBehaviour
 
     [Inject]
     GameManager gameManager;
+    [Inject]
+    PieceManager pieceManager;
     public float PlayerSpeed
     { 
         get => _playerSpeed; 
@@ -50,16 +53,25 @@ public class PlayerManager : MonoBehaviour
     {
         EventManager.OnGetLastPiece += GetLastPiece;
         EventManager.OnPlayerFall += PlayerFall;
+        EventManager.OnPlayerFnishActivity += PlayerFnishActivity;
     }
     private void OnDisable()
     {
         EventManager.OnGetLastPiece -= GetLastPiece;
         EventManager.OnPlayerFall -= PlayerFall;
+        EventManager.OnPlayerFnishActivity -= PlayerFnishActivity;
     }
 
+    private void Update()
+    {
+        // Eger parca konulmadýysa fail olur.
+        if (!pieceManager.IsPiecePlaced && transform.position.z >= (_lastPiece.transform.position.z + _lastPiece.transform.localScale.z) - 1.25f)
+            EventManager.OnGameFail?.Invoke();
+
+    }
     private void FixedUpdate()
     {
-        if (gameManager.IsGameStarted && PlayerState == PlayerState.Run)
+        if (gameManager.IsGameStarted && PlayerState == PlayerState.Run && !gameManager.IsGameFnish)
         {
             MovePlayer();
         }
@@ -83,8 +95,20 @@ public class PlayerManager : MonoBehaviour
         playerAnimator.SetTrigger(Fall);
         _playerState = PlayerState.Fail;
         playerRigidbody.constraints &= ~RigidbodyConstraints.FreezePositionY;
-        GetComponentInChildren<Collider>().isTrigger = true;
+        GetComponent<Collider>().enabled = false;
+    }
 
+    private void PlayerFnishActivity(Vector3 fnishPoint)
+    {
+        gameManager.IsGameFnish = true;
+        transform.DOMove(fnishPoint, 2f).OnComplete(() =>
+        {
+            _playerState = PlayerState.Win;
+            playerAnimator.SetBool(Runnig, false);
+            playerAnimator.SetTrigger(Dance);
+            playerRigidbody.constraints = RigidbodyConstraints.FreezePosition;
+            EventManager.OnCameraFnish?.Invoke();
+        });
 
     }
 

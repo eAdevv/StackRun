@@ -16,11 +16,13 @@ public class CameraManager : MonoBehaviour
     {
         EventManager.OnCameraIdleToStart += IdleCamera;
         EventManager.OnCameraStop += StopGameCamera;
+        EventManager.OnCameraFnish += FnishGameCamera;
     }
     private void OnDisable()
     {
         EventManager.OnCameraIdleToStart -= IdleCamera;
         EventManager.OnCameraStop -= StopGameCamera;
+        EventManager.OnCameraFnish -= FnishGameCamera;
     }
     private void IdleCamera()
     {
@@ -36,5 +38,10 @@ public class CameraManager : MonoBehaviour
     private void StopGameCamera()
     {
         gameCamera.Follow = null;
+    }
+
+    private void FnishGameCamera()
+    {
+        StopGameCamera();
     }
 }
