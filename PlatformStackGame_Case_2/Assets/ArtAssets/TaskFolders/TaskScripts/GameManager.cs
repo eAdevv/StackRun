@@ -43,6 +43,7 @@ public class GameManager : MonoBehaviour
         {
             StartText.SetActive(false);
             EventManager.OnCameraIdleToStart();
+            
         }
     }
 
@@ -62,14 +63,14 @@ public class GameManager : MonoBehaviour
 
     public void GameRestart()
     {
-        SceneManager.LoadSceneAsync(0, LoadSceneMode.Single);
+        SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
+        FailCanvas.GetComponentInChildren<Button>().onClick.AddListener(GameRestart);
     }
 
     IEnumerator DelayedFailCanvas(float delay)
     {
         yield return new WaitForSeconds(delay);
         FailCanvas.SetActive(true);
-        FailCanvas.GetComponentInChildren<Button>().onClick.AddListener(GameRestart);
         EventManager.OnCameraStop?.Invoke();
 
     }

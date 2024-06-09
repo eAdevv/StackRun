@@ -11,6 +11,7 @@ public class Collectable : MonoBehaviour
         collectableParticle = GetComponentInChildren<ParticleSystem>();
         transform.DOMoveY(transform.position.y + .5f, 1).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
         transform.DORotate(new Vector3(0, 90, 0), 1).SetEase(Ease.Linear).SetLoops(-1, LoopType.Incremental);
+
     }
     private void OnTriggerEnter(Collider other)
     {
@@ -24,4 +25,7 @@ public class Collectable : MonoBehaviour
         DOTween.Kill(transform);
         Destroy(gameObject, 2);
     }
+
+   
+ 
 }
