@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
     [SerializeField]private bool isGameFnish;
     [SerializeField] private GameObject StartText;
     [SerializeField] private GameObject FailCanvas;
+    [SerializeField] private GameObject WinCanvas;
+        
 
     [Inject] PlayerManager playerManager;
     [Inject] PieceManager pieceManager;

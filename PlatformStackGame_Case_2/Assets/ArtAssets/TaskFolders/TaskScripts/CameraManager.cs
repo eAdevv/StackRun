@@ -8,8 +8,12 @@ using Zenject;
 
 public class CameraManager : MonoBehaviour
 {
+    [Header("Camera")]
     [SerializeField] private CinemachineVirtualCamera StartCamera;
     [SerializeField] private CinemachineVirtualCamera GameCamera;
+    [SerializeField] private CinemachineVirtualCamera FnishCamera;
+    [SerializeField] private CinemachineDollyCart FnishCameraDolyCart;
+    [Header("Points")]
     [SerializeField] private Transform StartTransform;
     [SerializeField] private Transform CameraTarget;
     [SerializeField] private Transform Test;
@@ -43,10 +47,15 @@ public class CameraManager : MonoBehaviour
     {
         GameCamera.Follow = null;
         GameCamera.LookAt = null;
+
+        
     }
 
+    
     private void FnishGameCamera()
     {
         StopGameCamera();
+        FnishCamera.Priority = GameCamera.Priority + 1;
+        FnishCameraDolyCart.m_Speed = 5f;
     }
 }

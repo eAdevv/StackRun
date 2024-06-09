@@ -21,6 +21,6 @@ public static class EventManager
 
     #region Player Events
     public static UnityAction OnPlayerFall;
-    public static UnityAction<Vector3> OnPlayerFnishActivity;
+    public static UnityAction OnPlayerFnishActivity;
     #endregion
 }

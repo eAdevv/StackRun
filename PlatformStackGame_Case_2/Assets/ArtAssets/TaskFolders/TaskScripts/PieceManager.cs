@@ -30,7 +30,7 @@ public class PieceManager : MonoBehaviour
     private AudioSource audioSource;
 
     private bool isPiecePlaced;
-
+  
     public GameObject PiecePrefab { get => piecePrefab; set => piecePrefab = value; }
     public float PieceSpeed { get => pieceSpeed; set => pieceSpeed = value; }
     public bool IsPiecePlaced { get => isPiecePlaced; set => isPiecePlaced = value; }
@@ -39,7 +39,6 @@ public class PieceManager : MonoBehaviour
     {
         if (gameObject.transform.position.x > 0) PieceDirection = SpawnDirection.Left; // Spawner Saðda ise piece sola gider;
         else PieceDirection = SpawnDirection.Right; // Deðilse saða gider;
-
     }
 
     private void Start()
@@ -60,7 +59,7 @@ public class PieceManager : MonoBehaviour
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Mouse0) && gameManager.IsGameStarted && !gameManager.IsGameFnish)
+        if(Input.GetKeyDown(KeyCode.Mouse0) && gameManager.IsGameStarted)
         {
             CutPiece();
         }

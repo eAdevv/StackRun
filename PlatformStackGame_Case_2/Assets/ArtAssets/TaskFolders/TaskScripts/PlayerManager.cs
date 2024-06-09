@@ -17,11 +17,11 @@ public class PlayerManager : MonoBehaviour
 
     [SerializeField] private float _playerSpeed;
     [SerializeField] private Transform finalPoint;
-    [SerializeField] private GameObject _lastPiece;
 
     private Animator playerAnimator;
     private Rigidbody playerRigidbody;
     private PlayerState _playerState;
+    private GameObject _lastPiece;
 
     private static readonly int Runnig = Animator.StringToHash("Run");
     private static readonly int Fall = Animator.StringToHash("Fall");
@@ -65,8 +65,13 @@ public class PlayerManager : MonoBehaviour
     private void Update()
     {
         // Eger parca konulmadýysa fail olur.
-        if (!pieceManager.IsPiecePlaced && transform.position.z >= (_lastPiece.transform.position.z + _lastPiece.transform.localScale.z) - 1.25f)
+        if (!pieceManager.IsPiecePlaced && transform.position.z >= (_lastPiece.transform.position.z + _lastPiece.transform.localScale.z) - 1f)
             EventManager.OnGameFail?.Invoke();
+
+        if (Vector3.Distance(transform.position, finalPoint.transform.position) < 4.5f)
+        {
+            gameManager.IsGameFnish = true;
+        }
 
     }
     private void FixedUpdate()
@@ -98,16 +103,17 @@ public class PlayerManager : MonoBehaviour
         GetComponent<Collider>().enabled = false;
     }
 
-    private void PlayerFnishActivity(Vector3 fnishPoint)
+    private void PlayerFnishActivity( )
     {
         gameManager.IsGameFnish = true;
-        transform.DOMove(fnishPoint, 2f).OnComplete(() =>
+        transform.DOMove(finalPoint.position, 2f).OnComplete(() =>
         {
             _playerState = PlayerState.Win;
             playerAnimator.SetBool(Runnig, false);
             playerAnimator.SetTrigger(Dance);
             playerRigidbody.constraints = RigidbodyConstraints.FreezePosition;
             EventManager.OnCameraFnish?.Invoke();
+            finalPoint.GetComponentInChildren<ParticleSystem>().Play();
         });
 
     }
