@@ -8,12 +8,13 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     private const float FAIL_CANVAS_OPEN_DELAY = 2F;
-    private bool isGameStarted;
-    [SerializeField]private bool isGameFnish;
+
     [SerializeField] private GameObject StartText;
     [SerializeField] private GameObject FailCanvas;
     [SerializeField] private GameObject WinCanvas;
-        
+
+    private bool isGameStarted;
+    private bool isGameFnish;
 
     [Inject] PlayerManager playerManager;
     [Inject] PieceManager pieceManager;
@@ -29,15 +30,22 @@ public class GameManager : MonoBehaviour
         set => isGameFnish = value;
     }
 
+    private void Start()
+    {
+        FailCanvas.GetComponentInChildren<Button>().onClick.AddListener(GameRestart);
+    }
+
     private void OnEnable()
     {
         EventManager.OnGameStart += GameStart;
         EventManager.OnGameFail += GameFail;
+        EventManager.OnGameWin += GameWin;
     }
     private void OnDisable()
     {
         EventManager.OnGameStart -= GameStart;
         EventManager.OnGameFail -= GameFail;
+        EventManager.OnGameWin -= GameWin;
     }
     private void Update()
     {
@@ -45,28 +53,32 @@ public class GameManager : MonoBehaviour
         {
             StartText.SetActive(false);
             EventManager.OnCameraIdleToStart();
-            
         }
     }
 
-    public void GameStart()
+    private void GameStart()
     {
         IsGameStarted = true;
         playerManager.PlayerState = PlayerState.Run;
         EventManager.OnSpawnPiece(pieceManager.PiecePrefab.transform.localScale, pieceManager.transform.position); // Ilk parca spawn
     }
 
-    public void GameFail()
+    private void GameFail()
     {
         EventManager.OnPlayerFall?.Invoke();
         IsGameFnish = true;
         StartCoroutine(DelayedFailCanvas(FAIL_CANVAS_OPEN_DELAY));
     }
 
+    private void GameWin()
+    {
+        IsGameFnish = true;
+        EventManager.OnPlayerFnishActivity?.Invoke(WinCanvas);
+    }
+
     public void GameRestart()
     {
         SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
-        FailCanvas.GetComponentInChildren<Button>().onClick.AddListener(GameRestart);
     }
 
     IEnumerator DelayedFailCanvas(float delay)

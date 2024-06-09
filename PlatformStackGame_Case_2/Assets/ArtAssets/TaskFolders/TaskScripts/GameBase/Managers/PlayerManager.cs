@@ -68,9 +68,9 @@ public class PlayerManager : MonoBehaviour
         if (!pieceManager.IsPiecePlaced && transform.position.z >= (_lastPiece.transform.position.z + _lastPiece.transform.localScale.z) - 1f)
             EventManager.OnGameFail?.Invoke();
 
-        if (Vector3.Distance(transform.position, finalPoint.transform.position) < 4.5f)
+        if (Vector3.Distance(transform.position, finalPoint.transform.position) < 5f)
         {
-            gameManager.IsGameFnish = true;
+            pieceManager.IsCanSpawn = false;
         }
 
     }
@@ -103,12 +103,12 @@ public class PlayerManager : MonoBehaviour
         GetComponent<Collider>().enabled = false;
     }
 
-    private void PlayerFnishActivity( )
+    private void PlayerFnishActivity(GameObject winCanvas)
     {
-        gameManager.IsGameFnish = true;
         transform.DOMove(finalPoint.position, 2f).OnComplete(() =>
         {
             _playerState = PlayerState.Win;
+            winCanvas.SetActive(true);
             playerAnimator.SetBool(Runnig, false);
             playerAnimator.SetTrigger(Dance);
             playerRigidbody.constraints = RigidbodyConstraints.FreezePosition;

@@ -26,17 +26,19 @@ public class PieceManager : MonoBehaviour
     private SpawnDirection PieceDirection;
 
     private GameObject LastPiece;
-    private GameObject CurrentPiece;
+    [SerializeField] private GameObject CurrentPiece;
     private AudioSource audioSource;
 
     private bool isPiecePlaced;
-  
+    private bool isCanSpawn;
     public GameObject PiecePrefab { get => piecePrefab; set => piecePrefab = value; }
     public float PieceSpeed { get => pieceSpeed; set => pieceSpeed = value; }
     public bool IsPiecePlaced { get => isPiecePlaced; set => isPiecePlaced = value; }
+    public bool IsCanSpawn { get => isCanSpawn; set => isCanSpawn = value; }
 
     private void Awake()
     {
+        isCanSpawn = true;
         if (gameObject.transform.position.x > 0) PieceDirection = SpawnDirection.Left; // Spawner Saðda ise piece sola gider;
         else PieceDirection = SpawnDirection.Right; // Deðilse saða gider;
     }
@@ -59,7 +61,7 @@ public class PieceManager : MonoBehaviour
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Mouse0) && gameManager.IsGameStarted)
+        if(Input.GetKeyDown(KeyCode.Mouse0) && gameManager.IsGameStarted && !gameManager.IsGameFnish)
         {
             CutPiece();
         }
@@ -68,7 +70,7 @@ public class PieceManager : MonoBehaviour
     #region Piece Spawn
     private void OnSpawnPiece(Vector3 LocalScale , Vector3 Position)
     {
-        if (!gameManager.IsGameFnish)
+        if (IsCanSpawn)
         {
             var newPiece = SpawnNewPiece(LocalScale, Position);
             newPiece.GetComponent<MeshRenderer>().material = myColors[Random.Range(0, myColors.Length - 1)];
@@ -133,14 +135,17 @@ public class PieceManager : MonoBehaviour
         Vector3 mainScale = CurrentPiece.transform.localScale;
         Vector3 mainPos = CurrentPiece.transform.position;
         CuttedPiece.transform.position = new Vector3((targetPos.x + mainPos.x) / 2f, mainPos.y, mainPos.z);
-        CuttedPiece.transform.localScale = new Vector3(CurrentPiece.transform.localScale.x-Mathf.Abs(LastPiece.transform.position.x - CurrentPiece.transform.position.x), CurrentPiece.transform.localScale.y, CurrentPiece.transform.localScale.z);
+        CuttedPiece.transform.localScale = new Vector3(mainScale.x-Mathf.Abs(targetPos.x - mainPos.x), mainScale.y, mainScale.z);
         var offset = SetPiecePositionOffset(mainPos, targetPos);
 
         SetCurrentBlock(mainPos, targetPos, mainScale, CuttedPiece, offset);
+
+
         RigidbodyChanges(CurrentPiece);
         DOTween.Kill(CurrentPiece.transform);
+
         // Perfect Click 
-        var isPerfectClick = CuttedPiece.transform.localScale.x / CurrentPiece.transform.localScale.x > CLICK_TOLERANCE;
+        var isPerfectClick = PefectClickCheck(CuttedPiece.transform);
 
         if (isPerfectClick)
         {
@@ -173,12 +178,20 @@ public class PieceManager : MonoBehaviour
             RigidbodyChanges(CuttedPiece);
             Destroy(CurrentPiece);
 
-            DOVirtual.DelayedCall(.35f, () => {
-                EventManager.OnGameFail?.Invoke();
-            });
+            StartCoroutine(FailEventDelay(0.5f));
         }
 
-       
+    }
+
+    private bool PefectClickCheck(Transform CuttedPieceTransform)
+    { 
+        return CuttedPieceTransform.transform.localScale.x / LastPiece.transform.localScale.x > CLICK_TOLERANCE;
+    }
+
+    IEnumerator FailEventDelay(float offset)
+    {
+        yield return new WaitForSeconds(offset);
+        EventManager.OnGameFail?.Invoke();
     }
    
     private void SetCurrentBlock(Vector3 MainPos, Vector3 TargetPos, Vector3 MainScale, GameObject cutBlock, float offset)

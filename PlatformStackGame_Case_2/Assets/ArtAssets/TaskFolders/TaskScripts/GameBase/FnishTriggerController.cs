@@ -9,6 +9,6 @@ public class FnishTriggerController : MonoBehaviour
         bool isPlayer = other.TryGetComponent(out PlayerManager player);
         if (!isPlayer) return;
 
-        EventManager.OnPlayerFnishActivity?.Invoke();
+        EventManager.OnGameWin?.Invoke();
     }
 }
