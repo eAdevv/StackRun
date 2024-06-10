@@ -2,9 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using Zenject;
 
 public class UIManager : MonoBehaviour
 {
+    [Inject] EventManager eventManager;
+
     [SerializeField] private GameObject startText;
     [SerializeField] private GameObject failCanvas;
     [SerializeField] private GameObject winCanvas;
@@ -23,12 +26,12 @@ public class UIManager : MonoBehaviour
 
     private void OnEnable()
     {
-        EventManager.OnNextLevelUIChange += NextLevelUIChanger;
+        eventManager.OnNextLevelUIChange += NextLevelUIChanger;
     }
 
     private void OnDisable()
     {
-        EventManager.OnNextLevelUIChange -= NextLevelUIChanger;
+        eventManager.OnNextLevelUIChange -= NextLevelUIChanger;
     }
     private void NextLevelUIChanger()
     {

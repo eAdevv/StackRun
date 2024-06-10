@@ -15,5 +15,6 @@ public class Installer : MonoInstaller
         Container.Bind<GameManager>().FromInstance(gameManager);
         Container.Bind<PlayerManager>().FromInstance(playerManager);
         Container.Bind<UIManager>().FromInstance(_UIManager);
+        Container.Bind<EventManager>().AsSingle().NonLazy();
     }
 }

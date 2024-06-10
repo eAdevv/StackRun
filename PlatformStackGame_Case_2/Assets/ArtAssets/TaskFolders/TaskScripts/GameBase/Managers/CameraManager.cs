@@ -13,23 +13,40 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private CinemachineVirtualCamera GameCamera;
     [SerializeField] private CinemachineVirtualCamera FnishCamera;
     [SerializeField] private CinemachineDollyCart FnishCameraDolyCart;
+    [SerializeField] private GameObject FnishCameraPathHolder;
+
     [Header("Points")]
     [SerializeField] private Transform StartTransform;
     [SerializeField] private Transform CameraTarget;
 
+    [SerializeField] private List<Transform> fnishCameraPoints = new List<Transform>();
+    private Transform currentFnishCameraTransfom;
+
+    [Inject]
+    EventManager eventManager;
+
     private void OnEnable()
     {
-        EventManager.OnCameraIdleToStart += IdleCamera;
-        EventManager.OnCameraStop += StopGameCamera;
-        EventManager.OnCameraFnish += FnishGameCamera;
-        EventManager.OnCameraStart += StartGameCamera;
+        eventManager.OnCameraIdleToStart += IdleCamera;
+        eventManager.OnCameraStop += StopGameCamera;
+        eventManager.OnCameraFnish += FnishGameCamera;
+        eventManager.OnCameraStart += StartGameCamera;
+        eventManager.OnCameraFnishPointChange += FnishCameraPointChange;
     }
     private void OnDisable()
     {
-        EventManager.OnCameraIdleToStart -= IdleCamera;
-        EventManager.OnCameraStop -= StopGameCamera;
-        EventManager.OnCameraFnish -= FnishGameCamera;
-        EventManager.OnCameraStart -= StartGameCamera;
+        eventManager.OnCameraIdleToStart -= IdleCamera;
+        eventManager.OnCameraStop -= StopGameCamera;
+        eventManager.OnCameraFnish -= FnishGameCamera;
+        eventManager.OnCameraStart -= StartGameCamera;
+        eventManager.OnCameraFnishPointChange -= FnishCameraPointChange;
+    }
+
+    private void Start()
+    {
+        currentFnishCameraTransfom = fnishCameraPoints[0];
+        currentFnishCameraTransfom.position = fnishCameraPoints[0].position;
+        FnishCameraPathHolder.transform.position = currentFnishCameraTransfom.position;
     }
     private void IdleCamera()
     {
@@ -43,9 +60,7 @@ public class CameraManager : MonoBehaviour
         {
             StartGameCamera();
         }
-
     }
-
     private void StartGameCamera()
     {
         if (FnishCamera.Priority > GameCamera.Priority)
@@ -58,7 +73,7 @@ public class CameraManager : MonoBehaviour
         {
             StartCamera.Priority = GameCamera.Priority - 1;
         }
-        EventManager.OnGameStart?.Invoke();
+        eventManager.OnGameStart?.Invoke();
     }
     private void StopGameCamera()
     {
@@ -70,5 +85,14 @@ public class CameraManager : MonoBehaviour
         StopGameCamera();
         FnishCamera.Priority = GameCamera.Priority + 1;
         FnishCameraDolyCart.m_Speed = 5f;
+    }
+
+    private void FnishCameraPointChange()
+    {
+        var currentCamera = fnishCameraPoints.IndexOf(currentFnishCameraTransfom);
+        var newCameraPoint = fnishCameraPoints.Find(X => X == fnishCameraPoints[currentCamera + 1]);
+        FnishCameraPathHolder.transform.position = newCameraPoint.position;
+        currentFnishCameraTransfom = fnishCameraPoints[currentCamera + 1];
+
     }
 }

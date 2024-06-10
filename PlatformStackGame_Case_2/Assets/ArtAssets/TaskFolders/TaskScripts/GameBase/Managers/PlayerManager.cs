@@ -35,11 +35,9 @@ public class PlayerManager : MonoBehaviour
     GameManager gameManager;
     [Inject]
     PieceManager pieceManager;
-    public float PlayerSpeed
-    {
-        get => _playerSpeed;
-        set => _playerSpeed = value;
-    }
+    [Inject]
+    EventManager eventManager;
+   
     public PlayerState PlayerState
     {
         get => _playerState;
@@ -50,41 +48,36 @@ public class PlayerManager : MonoBehaviour
         get => isGameEnd;
         set => isGameEnd = value;
     }
-    public bool IsPlayerOnFnish
-    {
-        get => isPlayerOnFnish;
-        set => isPlayerOnFnish = value;
-    }
-    public Transform FinalPoint { get => finalPoint; set => finalPoint = value; }
+    public Rigidbody PlayerRigidbody { get => playerRigidbody; set => playerRigidbody = value; }
 
     private void Awake()
     {
         playerAnimator = GetComponentInChildren<Animator>();
-        playerRigidbody = GetComponent<Rigidbody>();
+        PlayerRigidbody = GetComponent<Rigidbody>();
         PlayerState = PlayerState.Idle;
         finalPoint = levelFnishPoints[finalPointID];
     }
 
     private void OnEnable()
     {
-        EventManager.OnGetLastPiece += GetLastPiece;
-        EventManager.OnPlayerFall += PlayerFall;
-        EventManager.OnPlayerFnishActivity += PlayerFnishActivity;
+        eventManager.OnGetLastPiece += GetLastPiece;
+        eventManager.OnPlayerFall += PlayerFall;
+        eventManager.OnPlayerFnishActivity += PlayerFnishActivity;
     }
     private void OnDisable()
     {
-        EventManager.OnGetLastPiece -= GetLastPiece;
-        EventManager.OnPlayerFall -= PlayerFall;
-        EventManager.OnPlayerFnishActivity -= PlayerFnishActivity;
+        eventManager.OnGetLastPiece -= GetLastPiece;
+        eventManager.OnPlayerFall -= PlayerFall;
+        eventManager.OnPlayerFnishActivity -= PlayerFnishActivity;
     }
 
     private void Update()
     {
         // Eger parca konulmadýysa fail olur.
-        if (!pieceManager.IsPiecePlaced && transform.position.z >= (_lastPiece.transform.position.z + _lastPiece.transform.localScale.z) - 1f)
-            EventManager.OnGameFail?.Invoke();
+        if (!pieceManager.IsPiecePlaced && transform.position.z >= (_lastPiece.transform.position.z + _lastPiece.transform.localScale.z) - 1f && !gameManager.IsGameFnish)
+            eventManager.OnGameFail?.Invoke();
 
-        if (Vector3.Distance(transform.position, FinalPoint.transform.position) < 5f && !IsPlayerOnFnish)
+        if (Vector3.Distance(transform.position, finalPoint.transform.position) < 5f && !isPlayerOnFnish)
             pieceManager.IsCanSpawn = false;
 
         SetAnimation();
@@ -97,13 +90,15 @@ public class PlayerManager : MonoBehaviour
 
     private void MovePlayer()
     {
-        playerRigidbody.velocity = Vector3.forward * PlayerSpeed;
+        PlayerRigidbody.velocity = Vector3.forward * _playerSpeed;
 
         if (_lastPiece != null)
         {
             var piecePoint = new Vector3(_lastPiece.transform.position.x, transform.position.y, transform.position.z);
             transform.position = Vector3.Lerp(transform.position, piecePoint, TIME_MULTIPLIER * Time.deltaTime);
         }
+        else 
+            Debug.LogError("LAST PIECE NOT FOUND");
     }
 
     private void SetAnimation()
@@ -128,33 +123,32 @@ public class PlayerManager : MonoBehaviour
         }
 
     }
-
    
     private void PlayerFall()
     {
         _playerState = PlayerState.Fail;
-        playerRigidbody.constraints &= ~RigidbodyConstraints.FreezePositionY;
+        PlayerRigidbody.constraints &= ~RigidbodyConstraints.FreezePositionY;
         GetComponent<Collider>().enabled = false;
     }
 
     private void PlayerFnishActivity(GameObject winCanvas)
     {
-        IsPlayerOnFnish = true;
-        playerRigidbody.constraints = playerRigidbody.constraints | RigidbodyConstraints.FreezePositionZ;
-        transform.DOMove(FinalPoint.position, 2f).OnComplete(() =>
+        isPlayerOnFnish = true;
+        PlayerRigidbody.constraints = PlayerRigidbody.constraints | RigidbodyConstraints.FreezePositionZ;
+        transform.DOMove(finalPoint.position, 2f).OnComplete(() =>
         {
             if (!IsGameEnd)
                 winCanvas.SetActive(true);
 
             _playerState = PlayerState.Win;
-            EventManager.OnCameraFnish?.Invoke();
-            FinalPoint.GetComponentInChildren<ParticleSystem>().Play();
+            eventManager.OnCameraFnish?.Invoke();
+            finalPoint.GetComponentInChildren<ParticleSystem>().Play();
             _lastPiece = pieceManager.FnishPlatform;
 
             finalPoint = levelFnishPoints[finalPointID+1];
             finalPointID++;
 
-            IsPlayerOnFnish = false;
+            isPlayerOnFnish = false;
 
         });
 

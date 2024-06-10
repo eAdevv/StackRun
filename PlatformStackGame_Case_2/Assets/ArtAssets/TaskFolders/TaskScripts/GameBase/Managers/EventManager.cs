@@ -4,30 +4,39 @@ using UnityEngine;
 using System;
 using UnityEngine.Events;
 
-public static class EventManager 
+public class EventManager 
 {
     #region Game Events
-    public static UnityAction OnGameStart;
-    public static UnityAction OnGameFail;
-    public static UnityAction<Transform> OnGameWin;
-    public static UnityAction OnNextLevelPieceActivity;
-    public static UnityAction<GameObject> OnGetLastPiece;
-    public static UnityAction<Vector3, Vector3> OnSpawnPiece;
+
+    public UnityAction OnGameStart;
+    public UnityAction OnGameFail;
+    public UnityAction<Transform> OnGameWin;
+    public UnityAction OnNextLevelPieceActivity;
+    public UnityAction<GameObject> OnGetLastPiece;
+    public UnityAction<Vector3, Vector3> OnSpawnPiece;
+
     #endregion
 
     #region Camera Events
-    public static UnityAction OnCameraIdleToStart;
-    public static UnityAction OnCameraStop;
-    public static UnityAction OnCameraFnish;
-    public static UnityAction OnCameraStart;
+
+    public UnityAction OnCameraIdleToStart;
+    public UnityAction OnCameraStop;
+    public UnityAction OnCameraFnish;
+    public UnityAction OnCameraStart;
+    public UnityAction OnCameraFnishPointChange;
+
     #endregion
 
     #region Player Events
-    public static UnityAction OnPlayerFall;
-    public static UnityAction<GameObject> OnPlayerFnishActivity;
+
+    public UnityAction OnPlayerFall;
+    public UnityAction<GameObject> OnPlayerFnishActivity;
+
     #endregion
 
     #region UI Events
-    public static UnityAction OnNextLevelUIChange;
+
+    public UnityAction OnNextLevelUIChange;
+
     #endregion
 }
