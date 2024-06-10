@@ -7,17 +7,15 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    private const float FAIL_CANVAS_OPEN_DELAY = 2F;
-
-    [SerializeField] private GameObject StartText;
-    [SerializeField] private GameObject FailCanvas;
-    [SerializeField] private GameObject WinCanvas;
+    private const float FAIL_CANVAS_OPEN_DELAY = 2f;
 
     private bool isGameStarted;
     private bool isGameFnish;
 
+    [SerializeField] private Rigidbody playerRigidbody;
     [Inject] PlayerManager playerManager;
     [Inject] PieceManager pieceManager;
+    [Inject] UIManager _UIManager;
 
     public bool IsGameStarted 
     { 
@@ -32,7 +30,8 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        FailCanvas.GetComponentInChildren<Button>().onClick.AddListener(GameRestart);
+        _UIManager.FailCanvas.GetComponentInChildren<Button>().onClick.AddListener(GameRestart);
+        _UIManager.WinCanvas.GetComponentInChildren<Button>().onClick.AddListener(NextLevel);
     }
 
     private void OnEnable()
@@ -51,8 +50,9 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.S))
         {
-            StartText.SetActive(false);
-            EventManager.OnCameraIdleToStart();
+            _UIManager.StartText.SetActive(false);
+            _UIManager.ClickText.SetActive(true);
+            EventManager.OnCameraIdleToStart?.Invoke();
         }
     }
 
@@ -60,7 +60,15 @@ public class GameManager : MonoBehaviour
     {
         IsGameStarted = true;
         playerManager.PlayerState = PlayerState.Run;
-        EventManager.OnSpawnPiece(pieceManager.PiecePrefab.transform.localScale, pieceManager.transform.position); // Ilk parca spawn
+        EventManager.OnSpawnPiece?.Invoke(pieceManager.PiecePrefab.transform.localScale, pieceManager.transform.position); // Ilk parca spawn
+
+        // Eðer yeni levela geciliyor ise playerin Z constraintsindan cikar.
+        if ((playerRigidbody.constraints & RigidbodyConstraints.FreezePositionZ) == RigidbodyConstraints.FreezePositionZ)
+        {
+            playerRigidbody.constraints = playerRigidbody.constraints & ~RigidbodyConstraints.FreezePositionZ;
+        }
+        pieceManager.IsCanSpawn = true;
+
     }
 
     private void GameFail()
@@ -68,12 +76,14 @@ public class GameManager : MonoBehaviour
         EventManager.OnPlayerFall?.Invoke();
         IsGameFnish = true;
         StartCoroutine(DelayedFailCanvas(FAIL_CANVAS_OPEN_DELAY));
+        _UIManager.ClickText.SetActive(false);
     }
 
-    private void GameWin()
+    private void GameWin(Transform finalPos)
     {
         IsGameFnish = true;
-        EventManager.OnPlayerFnishActivity?.Invoke(WinCanvas);
+        _UIManager.ClickText.SetActive(false);
+        EventManager.OnPlayerFnishActivity?.Invoke(_UIManager.WinCanvas);
     }
 
     public void GameRestart()
@@ -81,11 +91,24 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
 
+    public void NextLevel()
+    {
+        EventManager.OnNextLevelPieceActivity?.Invoke();
+        EventManager.OnNextLevelUIChange?.Invoke();
+        EventManager.OnCameraStart?.Invoke();
+        isGameFnish = false;
+        playerManager.PlayerState = PlayerState.Idle;
+    }
+
     IEnumerator DelayedFailCanvas(float delay)
     {
         yield return new WaitForSeconds(delay);
-        FailCanvas.SetActive(true);
+        _UIManager.FailCanvas.SetActive(true);
         EventManager.OnCameraStop?.Invoke();
-
     }
+
+  
+    
+   
+    
 }

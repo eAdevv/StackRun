@@ -16,42 +16,55 @@ public class CameraManager : MonoBehaviour
     [Header("Points")]
     [SerializeField] private Transform StartTransform;
     [SerializeField] private Transform CameraTarget;
-    [SerializeField] private Transform Test;
 
     private void OnEnable()
     {
         EventManager.OnCameraIdleToStart += IdleCamera;
         EventManager.OnCameraStop += StopGameCamera;
         EventManager.OnCameraFnish += FnishGameCamera;
+        EventManager.OnCameraStart += StartGameCamera;
     }
     private void OnDisable()
     {
         EventManager.OnCameraIdleToStart -= IdleCamera;
         EventManager.OnCameraStop -= StopGameCamera;
         EventManager.OnCameraFnish -= FnishGameCamera;
+        EventManager.OnCameraStart -= StartGameCamera;
     }
     private void IdleCamera()
     {
-        StartCamera.Priority = GameCamera.Priority + 1;
-        StartCamera.transform.DOMove(StartTransform.position, 1f);
-        StartCamera.transform.DORotate(StartTransform.transform.rotation.eulerAngles,1f).OnComplete(()=> StartGameCamera());
+        if (FnishCamera.Priority <= StartCamera.Priority)
+        {
+            StartCamera.Priority = GameCamera.Priority + 1;
+            StartCamera.transform.DOMove(StartTransform.position, 1f);
+            StartCamera.transform.DORotate(StartTransform.transform.rotation.eulerAngles, 1f).OnComplete(() => StartGameCamera());
+        }
+        else
+        {
+            StartGameCamera();
+        }
+
     }
 
     private void StartGameCamera()
     {
-        //gameCamera.Follow = CameraTarget;
-        StartCamera.Priority = GameCamera.Priority - 1;
+        if (FnishCamera.Priority > GameCamera.Priority)
+        {
+            GameCamera.Priority = FnishCamera.Priority + 1;
+            GameCamera.Follow = CameraTarget;
+            StartCamera.enabled = false;
+        }
+        else
+        {
+            StartCamera.Priority = GameCamera.Priority - 1;
+        }
         EventManager.OnGameStart?.Invoke();
     }
     private void StopGameCamera()
     {
         GameCamera.Follow = null;
-        GameCamera.LookAt = null;
-
-        
     }
 
-    
     private void FnishGameCamera()
     {
         StopGameCamera();

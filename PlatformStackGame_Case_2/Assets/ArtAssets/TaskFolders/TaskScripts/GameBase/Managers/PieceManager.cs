@@ -11,6 +11,7 @@ public enum SpawnDirection
 public class PieceManager : MonoBehaviour
 {
     [Inject] GameManager gameManager;
+    [Inject] PlayerManager playerManager;
 
     private const float MAX_DIRECTION_DISTANCE_LIMIT = 10;
     private const float CLICK_TOLERANCE = .9f;
@@ -18,23 +19,27 @@ public class PieceManager : MonoBehaviour
     [SerializeField] private GameObject piecePrefab;
     [SerializeField] private GameObject StartPlatform;
     [SerializeField] private AudioClip clickAudio;
-    [SerializeField] private Material[] myColors;
     [SerializeField] private float pieceSpeed;
-
-    private int perfectClickCount;
+    [SerializeField] private Material[] myColors;
+    [SerializeField] private List<GameObject> fnishPlatforms = new List<GameObject>();
+    private int platformIndex;
 
     private SpawnDirection PieceDirection;
-
+    private List<GameObject> Pieces = new List<GameObject>();
     private GameObject LastPiece;
-    [SerializeField] private GameObject CurrentPiece;
+    private GameObject CurrentPiece;
+    private GameObject fnishPlatform;
     private AudioSource audioSource;
 
     private bool isPiecePlaced;
     private bool isCanSpawn;
+    private int perfectClickCount;
+
     public GameObject PiecePrefab { get => piecePrefab; set => piecePrefab = value; }
     public float PieceSpeed { get => pieceSpeed; set => pieceSpeed = value; }
     public bool IsPiecePlaced { get => isPiecePlaced; set => isPiecePlaced = value; }
     public bool IsCanSpawn { get => isCanSpawn; set => isCanSpawn = value; }
+    public GameObject FnishPlatform { get => fnishPlatform; set => fnishPlatform = value; }
 
     private void Awake()
     {
@@ -48,15 +53,18 @@ public class PieceManager : MonoBehaviour
         LastPiece = StartPlatform;
         EventManager.OnGetLastPiece?.Invoke(LastPiece);
         audioSource = GetComponent<AudioSource>();
+        fnishPlatform = fnishPlatforms[0];
     }
 
     private void OnEnable()
     {
         EventManager.OnSpawnPiece += OnSpawnPiece;  
+        EventManager.OnNextLevelPieceActivity += NextLevelActivity;  
     }
     private void OnDisable()
     {
         EventManager.OnSpawnPiece -= OnSpawnPiece;
+        EventManager.OnNextLevelPieceActivity -= NextLevelActivity;
     }
 
     private void Update()
@@ -128,6 +136,7 @@ public class PieceManager : MonoBehaviour
     // Ana parcanýn scaleinden son platform parçasýnýn x pozisyonu ve ana parçanýn x pozisyon deðeri cýkarýlarak yeni parcanýn scale oraný bulunur.
     private void CutPiece()
     {
+        // Cut pÝECE
         GameObject CuttedPiece = Instantiate(PiecePrefab, CurrentPiece.transform.position,Quaternion.identity);
         CuttedPiece.GetComponent<MeshRenderer>().material = CurrentPiece.GetComponent<MeshRenderer>().material;
 
@@ -137,11 +146,6 @@ public class PieceManager : MonoBehaviour
         CuttedPiece.transform.position = new Vector3((targetPos.x + mainPos.x) / 2f, mainPos.y, mainPos.z);
         CuttedPiece.transform.localScale = new Vector3(mainScale.x-Mathf.Abs(targetPos.x - mainPos.x), mainScale.y, mainScale.z);
         var offset = SetPiecePositionOffset(mainPos, targetPos);
-
-        SetCurrentBlock(mainPos, targetPos, mainScale, CuttedPiece, offset);
-
-
-        RigidbodyChanges(CurrentPiece);
         DOTween.Kill(CurrentPiece.transform);
 
         // Perfect Click 
@@ -152,12 +156,16 @@ public class PieceManager : MonoBehaviour
             Debug.Log("Perfect");
             perfectClickCount++;
             audioSource.pitch = 0.5f + (perfectClickCount * .1f);
+            Destroy(CurrentPiece);
         }
         else
         {
-            Debug.Log("UnPerfect");
+            Debug.Log("Not Perfect");
             perfectClickCount = 0;
             audioSource.pitch = 0.5f;
+            SetCurrentBlock(mainPos, targetPos, mainScale, CuttedPiece, offset);
+            RigidbodyChanges(CurrentPiece);
+            Destroy(CurrentPiece, 2f);
         }
 
         audioSource.PlayOneShot(clickAudio);
@@ -169,6 +177,7 @@ public class PieceManager : MonoBehaviour
             OnSetSpawnerPosition();
             OnSpawnPiece(CuttedPiece.transform.localScale, transform.position);
             LastPiece = CuttedPiece;
+            Pieces.Add(CuttedPiece);
             EventManager.OnGetLastPiece?.Invoke(LastPiece);
         }
         else
@@ -224,6 +233,31 @@ public class PieceManager : MonoBehaviour
     }
 
     #endregion
+
+    private void NextLevelActivity()
+    {
+        transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + piecePrefab.transform.localScale.z * 1.35f);
+
+        FnishPlatform.GetComponent<MeshRenderer>().enabled = true;
+        LastPiece = FnishPlatform;
+
+        if (platformIndex < fnishPlatforms.Count)
+        {
+            FnishPlatform = fnishPlatforms[platformIndex + 1];
+            platformIndex++;
+        }
+
+        foreach (var piece in Pieces)
+        {
+            Destroy(piece);
+        }
+
+        Pieces.Clear();
+        
+    }
+
+
+
 
 
 

@@ -9,7 +9,8 @@ public static class EventManager
     #region Game Events
     public static UnityAction OnGameStart;
     public static UnityAction OnGameFail;
-    public static UnityAction OnGameWin;
+    public static UnityAction<Transform> OnGameWin;
+    public static UnityAction OnNextLevelPieceActivity;
     public static UnityAction<GameObject> OnGetLastPiece;
     public static UnityAction<Vector3, Vector3> OnSpawnPiece;
     #endregion
@@ -18,10 +19,15 @@ public static class EventManager
     public static UnityAction OnCameraIdleToStart;
     public static UnityAction OnCameraStop;
     public static UnityAction OnCameraFnish;
+    public static UnityAction OnCameraStart;
     #endregion
 
     #region Player Events
     public static UnityAction OnPlayerFall;
     public static UnityAction<GameObject> OnPlayerFnishActivity;
+    #endregion
+
+    #region UI Events
+    public static UnityAction OnNextLevelUIChange;
     #endregion
 }
